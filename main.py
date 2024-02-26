@@ -10,7 +10,7 @@ class MyLineReg():
     def __init__(self, n_iter=100, learning_rate=0.1, weights=None):
         self.n_iter = n_iter
         self.learning_rate = learning_rate
-        self.weighs = weights
+        self.weights = weights
 
     def __repr__(self):
         return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}'
@@ -31,8 +31,12 @@ class MyLineReg():
         ones = np.ones(len(x))
         #ones = x.shape[0]
         x.insert(loc=0, column='ones', value=ones)#дополняем переданную матрицу фичей x единичным столбцом слева.
-        w = np.ones(x.shape[1])#Определить сколько фичей передано и создать вектор весов,
-                           # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
+        weights = np.ones(x.shape[1])#Определить сколько фичей передано и создать вектор весов,
+                               # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
+        for i in range(self.n_iter):
+            pred_y = self.x*self.weights
+            mse = sum((pred_y-self.y)**2)/len(self.y)
+
 
 
 y = np.ones([5,1])
