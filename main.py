@@ -59,12 +59,13 @@ class MyLineReg():
     def predict(self, xx):
         '''
         -:param x: На вход принимается матрица фичей в виде датафрейма пандаса.
-        Матрицу фичей хх дополнятся единичным вектором (первый столбец).
         Возвращается вектор предсказаний
         '''
         self.xx = pd.DataFrame(xx)
 
         xx.insert(loc=0, column='ones', value=1)  # дополняем переданную матрицу фичей x единичным столбцом слева.
+        pred = xx.dot(self.weights)
+        return pred
 
 
 X, y = make_regression(n_samples=1000, n_features=14, n_informative=10, noise=15, random_state=42)
@@ -77,4 +78,5 @@ X.columns = [f'col_{col}' for col in X.columns]
 zz = MyLineReg()
 zz.fit(X,y,verbose=True)
 print(zz.get_coef())
+
 
