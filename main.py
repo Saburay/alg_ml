@@ -10,13 +10,18 @@ class MyLineReg():
     По-умолчанию: 0.1
     weights — хранит веса модели
     '''
-    def __init__(self, n_iter=100, learning_rate=0.1, weights=None):
+    def __init__(self, n_iter=100, learning_rate=0.1, weights=None, metric=None):
         self.n_iter = n_iter
         self.learning_rate = learning_rate
         self.weights = weights
+        self.metric = metric
 
     def __repr__(self):
-        return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}'
+        if self.metric!=None:
+            return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}, <{self.metric}>:'
+        else:
+            return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}'
+
 
     def fit(self, x, y, verbose=False):
         '''
@@ -41,10 +46,15 @@ class MyLineReg():
         s = 'start'
         for i in range(self.n_iter):
             pred_y = x.dot(v_weights)
+            mean_y = x.mean()
             mse = sum((self.y-pred_y)**2)/n
+            mae = sum(self.y-pred_y)/n
+            rmse = (sum((self.y-pred_y)**2)/n)**0.5
+            r2 = 1-(sum((self.y-pred_y)**2)/sum((self.y-mean_y)**2))
+            mape = (100/n)*(sum(abs(self.y-pred_y)/self.y))
             #pred_min_y = (pred_y - self.y)
-            gr = ((2/n)*((pred_y-self.y).dot(x)))
-            v_weights = v_weights-self.learning_rate*gr
+            gr = ((2/n)*((pred_y-self.y).dot(x)))#Вычисляем градиент
+            v_weights = v_weights-self.learning_rate*gr#шаг размером learning rate в противоположную от градиента сторону
             self.weights = v_weights
             if verbose:
                 if i == 1 or i % 10 == 0:
@@ -67,6 +77,10 @@ class MyLineReg():
         pred = xx.dot(self.weights)
         return pred
 
+    def get_best_score(selfs):
+
+        pass
+
 
 X, y = make_regression(n_samples=1000, n_features=14, n_informative=10, noise=15, random_state=42)
 X = pd.DataFrame(X)
@@ -78,5 +92,5 @@ X.columns = [f'col_{col}' for col in X.columns]
 zz = MyLineReg()
 zz.fit(X,y,verbose=True)
 print(zz.get_coef())
-
+print(zz.__repr__())
 
