@@ -15,6 +15,7 @@ class MyLineReg():
         self.learning_rate = learning_rate
         self.weights = weights
         self.metric = metric
+        #self.score_dict = {'mse': mse, 'mae': mae, 'rmse': rmse, 'r2': r2, 'mape': mape}
 
     def __repr__(self):
         return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}'
@@ -37,7 +38,7 @@ class MyLineReg():
         self.y = pd.Series(y)
         self.verbose = verbose
 
-        self.mean_y = x.mean(axis=1)# !!! погонять  и уточнить объявление до добавления вектора едениц или после
+        self.mean_y = y.mean(axis=0)#среднее значение целевой переменной
         self.best_score = None
 
         #n = len(self.y)
@@ -46,28 +47,28 @@ class MyLineReg():
         v_weights = np.ones(x.shape[1])#Определить сколько фичей передано и создать вектор весов,
                                # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
         s = 'start'
-        #best_score = None
-        for i in range(self.n_iter):
+
+        for i in range(self.n_iter+1):
             pred_y = x.dot(v_weights)
             mse = sum((self.y - pred_y) ** 2) / n
-            #pred_min_y = (pred_y - self.y)
             gr = ((2/n)*((pred_y-self.y).dot(x)))#Вычисляем градиент
             v_weights = v_weights-self.learning_rate*gr#шаг размером learning rate в противоположную от градиента сторону
             self.weights = v_weights
 
             mse = sum((self.y - pred_y) ** 2) / n
-            mae = sum(self.y - pred_y) / n
+            mae = sum(abs(self.y - pred_y))/ n
             rmse = (sum((self.y - pred_y) ** 2) / n) ** 0.5
-            r2 = 1 - (sum((self.y - pred_y) ** 2) / (sum((self.y - self.mean_y) ** 2)))
-            mape = (100 / n) * (sum(abs(self.y - pred_y) / self.y))
-            score_dict = {'mse':mse,'mae':mae,'rmse':rmse,'r2':r2,'mape':mape}
+            r2 = 1 - (sum((self.y - pred_y) ** 2) )/ (sum((self.y - self.mean_y) ** 2))
+            mape = (100 * (sum(abs((self.y - pred_y) / self.y)))/ n)
+            score_dict = {'mse': mse,'mae': mae,'rmse': rmse,'r2': r2,'mape': mape}
+            if self.metric!=None:
+                self.best_score = score_dict[(self.metric).lower()]
             if verbose:
                 if i == 1 or i % 10 == 0:
-                    #print(f'{s}|loss:{mse}|')
                     if self.metric==None:
                         print(f'{s}|loss:{mse}|')
                     else:
-                        self.best_score = score_dict[(self.metric).lower()]
+                        #self.best_score = score_dict[(self.metric).lower()]
                         print(f'{s}|loss:{mse}|<{self.metric}>:{self.best_score}')
                     s = i
 
@@ -98,9 +99,9 @@ X.columns = [f'col_{col}' for col in X.columns]
 
 #print(X)
 
-zz = MyLineReg(metric='mae')
+zz = MyLineReg(metric='r2')
 zz.fit(X,y,verbose=True)
 #print(zz.get_coef())
 #print(zz.__repr__())
+#print(round(zz.get_best_score(),10))
 print(zz.get_best_score())
-
