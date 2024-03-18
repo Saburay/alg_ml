@@ -61,17 +61,25 @@ class MyLineReg():
 
         for i in range(self.n_iter+1):
             pred_y = x.dot(v_weights)
-            mse = sum((self.y - pred_y)**2)/n                                            #функция потерь
+            mse = sum((self.y - pred_y)**2)/n   #функция потерь
+            lasso_mse = self.l1 * (sum(abs(self.weights)))  #L1 слагаемое к mse
+            ridge_mse = self.l2 * (sum((self.weights) ** 2))#L2 слагаемое к mse
+            ElasticNet_mse = lasso_mse+ridge_mse            #ElasticNet слагаемое к mse
+            '''
             lasso_mse = (sum((self.y - pred_y)**2)/n)+self.l1*(sum(abs(self.weights)))   #функция потерь  с L1 регуляризацией
             ridge_mse = (sum((self.y - pred_y)**2)/n)+self.l2*(sum((self.weights)**2))   #функция потерь  с L2 регуляризацией
-            ElasticNet_mse = sum((self.y - pred_y)**2)/n#функция потерь  с ElasticNet регуляризацией
-
-            gr = ((2/n)*((pred_y-self.y).dot(x)))       #вычисляем градиент
-            #sgn_w = self.weights/abs(self.weights)
+            ElasticNet_mse = (sum((self.y - pred_y)**2)/n)+(self.l1*(sum(abs(self.weights))))+(self.l2*(sum((self.weights)**2)))#функция потерь  с ElasticNet регуляризацией
+            
             gr_lasso_mse = ((2/n)*((pred_y-self.y).dot(x)))+(self.l1*(self.weights/abs(self.weights))) #вычисляем градиент
                                                                                                        #с L1 регуляризацией
             gr_ridge_mse = ((2/n)*((pred_y-self.y).dot(x)))+(self.l2*(2*self.weights))                 #вычисляем градиент
                                                                                                        #с L2 регуляризацией
+            '''
+
+            gr = ((2/n)*((pred_y-self.y).dot(x)))                     #вычисляем градиент
+            gr_lasso_mse = (self.l1*(self.weights/abs(self.weights))) #L1 слагаемое к градиенту gr
+            gr_ridge_mse = (self.l2 * (2 * self.weights))             #L2 слагаемое к градиенту gr
+            gr_ElasticNet = gr_lasso_mse+gr_ridge_mse                 #ElasticNet слагаемое к градиенту gr
             v_weights = v_weights-self.learning_rate*gr #шаг размером learning rate в противоположную от градиента сторону
             self.weights = v_weights
 
