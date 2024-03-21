@@ -60,13 +60,13 @@ class MyLineReg():
 
         s = 'start'
 
-        for i in range(self.n_iter+1):
+        for i in range(self.n_iter):
             pred_y = x.dot(self.weights)
             lasso_mse = self.l1_coef * (sum(abs(self.weights)))  #L1 слагаемое к mse
             ridge_mse = self.l2_coef * (sum((self.weights) ** 2))#L2 слагаемое к mse
 
-            gr_lasso_mse = (self.l1_coef*(self.weights/abs(self.weights))) #L1 слагаемое к градиенту gr
-            #gr_lasso_mse = (self.l1_coef * np.sign(self.weights))       # L1 слагаемое к градиенту gr
+            #gr_lasso_mse = (self.l1_coef*(self.weights/abs(self.weights))) #L1 слагаемое к градиенту gr
+            gr_lasso_mse = (self.l1_coef * np.sign(self.weights))       # L1 слагаемое к градиенту gr
             gr_ridge_mse = (self.l2_coef * (2 * self.weights))          #L2 слагаемое к градиенту gr
 
             if self.reg==None:
