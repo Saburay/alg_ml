@@ -8,7 +8,6 @@ class MyLineReg():
     n_iter — количество шагов градиентного спуска.
     По-умолчанию: 100
     learning_rate — коэффициент скорости обучения градиентного спуска.
-    По-умолчанию: 0.1
     weights — хранит веса модели
     metric, который будет принимать одно из следующих значений:
     - mae
@@ -24,7 +23,6 @@ class MyLineReg():
     l2_coef – принимает значения от 0.0 до 1.0
     По умолчанию: 0
     '''
-
     def __init__(self,  learning_rate, n_iter=100, weights=None, metric=None, reg=None,
                  l1_coef=0, l2_coef=0):
         self.n_iter = n_iter
@@ -63,8 +61,9 @@ class MyLineReg():
         # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
 
         s = 'start'
-        use_learning_rate = self.learning_rate
-        for iter in range(1, self.n_iter + 1):
+        #use_learning_rate = self.learning_rate
+        for iter in range(1, self.n_iter+1):
+            use_learning_rate = self.learning_rate
             pred_y = x.dot(self.weights)
             lasso_mse = self.l1_coef * (sum(abs(self.weights)))  # L1 слагаемое к mse
             ridge_mse = self.l2_coef * (sum((self.weights) ** 2))  # L2 слагаемое к mse
@@ -85,16 +84,16 @@ class MyLineReg():
             elif self.reg == 'elasticnet':
                 mse = sum((self.y - pred_y) ** 2) / n + lasso_mse + ridge_mse
                 gr = ((2 / n) * ((pred_y - self.y).dot(x))) + gr_lasso_mse + gr_ridge_mse
-
+            #print(f'iter{iter}')
             try:
-                self.learning_rate = self.learning_rate(iter)
-
+                use_learning_rate = self.learning_rate(iter)
             except TypeError:
                 pass
             else:
-                self.learning_rate = self.learning_rate
-
-            self.weights = self.weights - self.learning_rate * gr  # шаг размером learning rate в противоположную от градиента сторону
+                pass
+                #self.learning_rate = self.learning_rate
+            #print(f'self.learning_rate: {use_learning_rate}, ####self.weights: {self.weights}  ')
+            self.weights = self.weights - use_learning_rate * gr  # шаг размером learning rate в противоположную от градиента сторону
 
             mae = sum(abs(self.y - pred_y)) / n  # метрика mae
             rmse = (sum((self.y - pred_y) ** 2) / n) ** 0.5  # метрика rmse
@@ -129,7 +128,6 @@ class MyLineReg():
     def get_best_score(self):
         return self.best_score
 
-
 X, y = make_regression(n_samples=1000, n_features=14, n_informative=10, noise=15, random_state=42)
 X = pd.DataFrame(X)
 y = pd.Series(y)
@@ -149,3 +147,4 @@ line = MyLineReg(
         learning_rate = lambda iter: 0.5 * (0.85 ** iter)
 )
 print(line)
+
