@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.datasets import make_regression
+import random
 
 
 class MyLineReg():
@@ -22,9 +23,12 @@ class MyLineReg():
     По умолчанию: 0
     l2_coef – принимает значения от 0.0 до 1.0
     По умолчанию: 0
+    -sgd_sample – кол-во образцов, которое будет использоваться на каждой итерации обучения. Может принимать либо целые числа, либо дробные от 0.0 до 1.0.
+    По-умолчанию: None
+    -random_state – для воспроизводимости результата зафиксируем сид,по-умолчанию: 42.
     '''
     def __init__(self,  learning_rate, n_iter=100, weights=None, metric=None, reg=None,
-                 l1_coef=0, l2_coef=0):
+                 l1_coef=0, l2_coef=0, sgd_sample=None, random_state=42):
         self.n_iter = n_iter
         self.learning_rate = learning_rate
         # self.learning_rate = 0.1
@@ -33,6 +37,8 @@ class MyLineReg():
         self.l1_coef = l1_coef
         self.l2_coef = l2_coef
         self.reg = reg
+        self.sgd_sample = sgd_sample
+        self.random_state = random_state
         # self.score_dict = {'mse': mse, 'mae': mae, 'rmse': rmse, 'r2': r2, 'mape': mape}
 
     def __repr__(self):
@@ -54,8 +60,8 @@ class MyLineReg():
         self.mean_y = y.mean(axis=0)  # среднее значение целевой переменной
         self.best_score = None
 
-        # n = len(self.y)
-        n = x.shape[0]
+        n = len(self.y)
+        #n = x.shape[0]
         x.insert(loc=0, column='ones', value=1)  # дополняем переданную матрицу фичей x единичным столбцом слева.
         self.weights = np.ones(x.shape[1])  # Определить сколько фичей передано и создать вектор весов,
         # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
@@ -63,6 +69,10 @@ class MyLineReg():
         s = 'start'
         #use_learning_rate = self.learning_rate
         for iter in range(1, self.n_iter+1):
+
+            random.seed(self.random_state)#фиксирум сид
+            sample_rows_idx = random.sample(range(X.shape[0]),self.sgd_sample)#при каждой итерации формируем порядковые номера строк, которые стоит отобрать
+
             use_learning_rate = self.learning_rate
             pred_y = x.dot(self.weights)
             lasso_mse = self.l1_coef * (sum(abs(self.weights)))  # L1 слагаемое к mse
