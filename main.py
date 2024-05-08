@@ -4,6 +4,7 @@ from sklearn.datasets import make_regression
 import random
 
 
+
 class MyLineReg():
     '''
     n_iter — количество шагов градиентного спуска.
@@ -23,9 +24,6 @@ class MyLineReg():
     По умолчанию: 0
     l2_coef – принимает значения от 0.0 до 1.0
     По умолчанию: 0
-    -sgd_sample – кол-во образцов, которое будет использоваться на каждой итерации обучения. Может принимать либо целые числа, либо дробные от 0.0 до 1.0.
-    По-умолчанию: None
-    -random_state – для воспроизводимости результата зафиксируем сид,по-умолчанию: 42.
     '''
 
     def __init__(self, learning_rate, n_iter=100, weights=None, metric=None, reg=None,
@@ -40,7 +38,7 @@ class MyLineReg():
         self.reg = reg
         self.sgd_sample = sgd_sample
         self.random_state = random_state
-        # self.score_dict = {'mse': mse, 'mae': mae, 'rmse': rmse, 'r2': r2, 'mape': mape}
+        random.seed(self.random_state)
 
     def __repr__(self):
         return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}'
@@ -61,24 +59,31 @@ class MyLineReg():
         self.mean_y = y.mean(axis=0)  # среднее значение целевой переменной
         self.best_score = None
 
-        n = len(self.y)
-        # n = x.shape[0]
-        x.insert(loc=0, column='ones', value=1)  # дополняем переданную матрицу фичей x единичным столбцом слева.
-        self.weights = np.ones(x.shape[1])  # Определить сколько фичей передано и создать вектор весов,
+        n = x.shape[0]
+        #x.insert(loc=0, column='ones', value=1)  # дополняем переданную матрицу фичей x единичным столбцом слева.
+        print('before_x\n',x)
+        self.x = pd.concat([pd.Series([1] * x.shape[0], index=x.index), x], axis=1)
+        print('after_self_x\n', self.x)
+        print('after_x\n', x)
+        self.weights = np.ones(self.x.shape[1])  # Определить сколько фичей передано и создать вектор весов,
         # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
-
         s = 'start'
-        # use_learning_rate = self.learning_rate
-        for iter in range(1, self.n_iter + 1):
-            use_x = x
-            random.seed(self.random_state)  # фиксирум сид
-            if self.sgd_sample is int:
-                sample_rows_idx = random.sample(range(x.shape[0]),
-                                                self.sgd_sample)  # при каждой итерации формируем порядковые номера строк, которые стоит отобрать
-                print(f'sample_rows_idx:   {sample_rows_idx}')
-
+        #use_learning_rate = self.learning_rate
+        for iter in range(1, self.n_iter+1):
+            use_x = self.x
+            pred_y = use_x.dot(self.weights)
             use_learning_rate = self.learning_rate
-            pred_y = x.dot(self.weights)
+            if self.sgd_sample is not None:
+                self.sgd_sample = int(use_x.shape[0]*self.sgd_sample) if type(self.sgd_sample) is float else self.sgd_sample
+                sample_rows_idx = random.sample(range(use_x.shape[0]), self.sgd_sample)
+                use_x = use_x.loc[sample_rows_idx]
+                pred_y = use_x.dot(self.weights)
+                self.y = pd.Series(y).loc[sample_rows_idx]
+                n = use_x.shape[0]
+                # print('pred_y = ',mini_batch.dot(self.weights))
+                # print('self.y = ', pd.Series(y).loc[sample_rows_idx])
+                # print('mini_batch:  ', mini_batch)
+            #pred_y = x.dot(self.weights)
             lasso_mse = self.l1_coef * (sum(abs(self.weights)))  # L1 слагаемое к mse
             ridge_mse = self.l2_coef * (sum((self.weights) ** 2))  # L2 слагаемое к mse
 
@@ -98,15 +103,15 @@ class MyLineReg():
             elif self.reg == 'elasticnet':
                 mse = sum((self.y - pred_y) ** 2) / n + lasso_mse + ridge_mse
                 gr = ((2 / n) * ((pred_y - self.y).dot(use_x))) + gr_lasso_mse + gr_ridge_mse
-            # print(f'iter{iter}')
+            #print(f'iter{iter}')
             try:
                 use_learning_rate = self.learning_rate(iter)
             except TypeError:
                 pass
             else:
                 pass
-                # self.learning_rate = self.learning_rate
-            # print(f'self.learning_rate: {use_learning_rate}, ####self.weights: {self.weights}  ')
+                #self.learning_rate = self.learning_rate
+            #print(f'self.learning_rate: {use_learning_rate}, ####self.weights: {self.weights}  ')
             self.weights = self.weights - use_learning_rate * gr  # шаг размером learning rate в противоположную от градиента сторону
 
             mae = sum(abs(self.y - pred_y)) / n  # метрика mae
@@ -141,23 +146,24 @@ class MyLineReg():
 
     def get_best_score(self):
         return self.best_score
+X, y = make_regression(
+n_samples=1000,
+n_features=14,
+n_informative=10,
+noise=15,
+random_state=55)
+X = pd.DataFrame(X)
+y = pd.Series(y)
+#X, _, y, _ = train_test_split(X, y, test_size=0.2, random_state=42)
 
-X, y = make_regression(n_samples=1000, n_features=14, n_informative=10, noise=15, random_state=42)
+line = MyLineReg(n_iter=350, learning_rate=0.005,metric='mse', sgd_sample=None)
+line.fit(X, y, verbose=50)
+X, y = make_regression(n_samples=100, n_features=14, n_informative=10, noise=15, random_state=66)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 X.columns = [f'col_{col}' for col in X.columns]
 
-#print(X)
-
-zz = MyLineReg(learning_rate=lambda x: 0.5 * (0.85 ** x),metric='mse',sgd_sample=5)
-zz.fit(X,y,verbose=True)
-
-reg = None
-line = MyLineReg(
-        n_iter = 50,
-        learning_rate = lambda iter: 0.5 * (0.85 ** iter)
-)
-print(line)
+print('SUM:--->  ',line.get_coef().sum())
 #------------------
 # Traceback (most recent call last):
 #   File "jailed_code", line 167, in <module>
