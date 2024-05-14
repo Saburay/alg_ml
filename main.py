@@ -61,28 +61,31 @@ class MyLineReg():
 
         n = x.shape[0]
         #x.insert(loc=0, column='ones', value=1)  # дополняем переданную матрицу фичей x единичным столбцом слева.
-        print('before_x\n',x)
+        #print('before_x\n',x)
         self.x = pd.concat([pd.Series([1] * x.shape[0], index=x.index), x], axis=1)
-        print('after_self_x\n', self.x)
-        print('after_x\n', x)
+        # print('after_self_x\n', self.x)
+        # print('after_x\n', x)
         self.weights = np.ones(self.x.shape[1])  # Определить сколько фичей передано и создать вектор весов,
         # состоящий из одних единиц соответствующей длинны: т.е. количество фичей + 1.
         s = 'start'
         #use_learning_rate = self.learning_rate
         for iter in range(1, self.n_iter+1):
-            use_x = self.x
+            use_x = self.x.copy()
+            use_y = self.y.copy()
             pred_y = use_x.dot(self.weights)
             use_learning_rate = self.learning_rate
             if self.sgd_sample is not None:
-                self.sgd_sample = int(use_x.shape[0]*self.sgd_sample) if type(self.sgd_sample) is float else self.sgd_sample
-                sample_rows_idx = random.sample(range(use_x.shape[0]), self.sgd_sample)
+                use_sgd_sample = int(use_x.shape[0]*self.sgd_sample) if type(self.sgd_sample) is float else self.sgd_sample
+                sample_rows_idx = random.sample(range(use_x.shape[0]), use_sgd_sample)
                 use_x = use_x.loc[sample_rows_idx]
+                #use_x = use_x.index.isin(sample_rows_idx)
+                #print(sample_rows_idx)
                 pred_y = use_x.dot(self.weights)
-                self.y = pd.Series(y).loc[sample_rows_idx]
+                use_y = pd.Series(y).loc[sample_rows_idx]
                 n = use_x.shape[0]
                 # print('pred_y = ',mini_batch.dot(self.weights))
                 # print('self.y = ', pd.Series(y).loc[sample_rows_idx])
-                # print('mini_batch:  ', mini_batch)
+                #print('mini_batch:  ', '\n',use_x)
             #pred_y = x.dot(self.weights)
             lasso_mse = self.l1_coef * (sum(abs(self.weights)))  # L1 слагаемое к mse
             ridge_mse = self.l2_coef * (sum((self.weights) ** 2))  # L2 слагаемое к mse
@@ -92,17 +95,17 @@ class MyLineReg():
             gr_ridge_mse = (self.l2_coef * (2 * self.weights))  # L2 слагаемое к градиенту gr
 
             if self.reg == None:
-                mse = sum((self.y - pred_y) ** 2) / n  # функция потерь,метрика mse
-                gr = ((2 / n) * ((pred_y - self.y).dot(use_x)))  # вычисляем градиент
+                mse = sum((use_y - pred_y) ** 2) / n  # функция потерь,метрика mse
+                gr = ((2 / n) * ((pred_y - use_y).dot(use_x)))  # вычисляем градиент
             elif self.reg == 'l1':
-                mse = sum((self.y - pred_y) ** 2) / n + lasso_mse
-                gr = ((2 / n) * ((pred_y - self.y).dot(use_x))) + gr_lasso_mse
+                mse = sum((use_y - pred_y) ** 2) / n + lasso_mse
+                gr = ((2 / n) * ((pred_y - use_y).dot(use_x))) + gr_lasso_mse
             elif self.reg == 'l2':
-                mse = sum((self.y - pred_y) ** 2) / n + ridge_mse
-                gr = ((2 / n) * ((pred_y - self.y).dot(use_x))) + gr_ridge_mse
+                mse = sum((use_y - pred_y) ** 2) / n + ridge_mse
+                gr = ((2 / n) * ((pred_y - use_y).dot(use_x))) + gr_ridge_mse
             elif self.reg == 'elasticnet':
-                mse = sum((self.y - pred_y) ** 2) / n + lasso_mse + ridge_mse
-                gr = ((2 / n) * ((pred_y - self.y).dot(use_x))) + gr_lasso_mse + gr_ridge_mse
+                mse = sum((use_y - pred_y) ** 2) / n + lasso_mse + ridge_mse
+                gr = ((2 / n) * ((pred_y - use_y).dot(use_x))) + gr_lasso_mse + gr_ridge_mse
             #print(f'iter{iter}')
             try:
                 use_learning_rate = self.learning_rate(iter)
@@ -114,10 +117,10 @@ class MyLineReg():
             #print(f'self.learning_rate: {use_learning_rate}, ####self.weights: {self.weights}  ')
             self.weights = self.weights - use_learning_rate * gr  # шаг размером learning rate в противоположную от градиента сторону
 
-            mae = sum(abs(self.y - pred_y)) / n  # метрика mae
-            rmse = (sum((self.y - pred_y) ** 2) / n) ** 0.5  # метрика rmse
-            r2 = 1 - (sum((self.y - pred_y) ** 2)) / (sum((self.y - self.mean_y) ** 2))  # метрика r2
-            mape = (100 * (sum(abs((self.y - pred_y) / self.y))) / n)  # метрика mape
+            mae = sum(abs(use_y - pred_y)) / n  # метрика mae
+            rmse = (sum((use_y - pred_y) ** 2) / n) ** 0.5  # метрика rmse
+            r2 = 1 - (sum((use_y - pred_y) ** 2)) / (sum((use_y - use_y.mean(axis=0)) ** 2))  # метрика r2
+            mape = (100 * (sum(abs((use_y - pred_y) / use_y))) / n)  # метрика mape
             score_dict = {'mse': mse, 'mae': mae, 'rmse': rmse, 'r2': r2, 'mape': mape}  # словарь метрик
             if self.metric != None:
                 self.best_score = score_dict[(self.metric).lower()]
@@ -151,16 +154,16 @@ n_samples=1000,
 n_features=14,
 n_informative=10,
 noise=15,
-random_state=55)
+random_state=42)
 X = pd.DataFrame(X)
 y = pd.Series(y)
 #X, _, y, _ = train_test_split(X, y, test_size=0.2, random_state=42)
 
-line = MyLineReg(n_iter=350, learning_rate=0.005,metric='mse', sgd_sample=None)
+line = MyLineReg(n_iter=350, learning_rate=0.005,metric='mse', sgd_sample=0.01)
 line.fit(X, y, verbose=50)
-X, y = make_regression(n_samples=100, n_features=14, n_informative=10, noise=15, random_state=66)
-X = pd.DataFrame(X)
-y = pd.Series(y)
+#X, y = make_regression(n_samples=100, n_features=14, n_informative=10, noise=15, random_state=66)
+# X = pd.DataFrame(X)
+# y = pd.Series(y)
 X.columns = [f'col_{col}' for col in X.columns]
 
 print('SUM:--->  ',line.get_coef().sum())
