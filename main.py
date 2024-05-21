@@ -71,22 +71,33 @@ class MyLineReg():
         #use_learning_rate = self.learning_rate
         for iter in range(1, self.n_iter+1):
             use_x = self.x.copy()
-            use_y = self.y.copy()
-            pred_y = use_x.dot(self.weights)
+            #use_x.reset_index(drop=True, inplace=True)
+            #self.weights = np.ones(self.x.shape[1])
+
             use_learning_rate = self.learning_rate
             if self.sgd_sample is not None:
-                use_sgd_sample = int(use_x.shape[0]*self.sgd_sample) if type(self.sgd_sample) is float else self.sgd_sample
-                sample_rows_idx = random.sample(range(use_x.shape[0]), use_sgd_sample)
+                use_sgd_sample = int(use_x.shape[0] * self.sgd_sample) if isinstance(self.sgd_sample,
+                                                                                     float) else self.sgd_sample
+                use_x.reset_index(drop=True, inplace=True)
+                sample_rows_idx = random.sample(list(use_x.index), use_sgd_sample)
                 use_x = use_x.loc[sample_rows_idx]
+                use_y = self.y.loc[sample_rows_idx]
+            else:
+                use_y = self.y
+            # if self.sgd_sample is not None:
+            #     use_sgd_sample = int(use_x.shape[0]*self.sgd_sample) if type(self.sgd_sample) is float else self.sgd_sample
+            #
+            #     sample_rows_idx = random.sample(range(use_x.shape[0]), use_sgd_sample)
+            #     use_x = use_x.loc[sample_rows_idx]
                 #use_x = use_x.index.isin(sample_rows_idx)
                 #print(sample_rows_idx)
                 pred_y = use_x.dot(self.weights)
-                use_y = pd.Series(y).loc[sample_rows_idx]
-                n = use_x.shape[0]
+                # use_y = pd.Series(y).loc[sample_rows_idx]
+                # n = use_x.shape[0]
                 # print('pred_y = ',mini_batch.dot(self.weights))
                 # print('self.y = ', pd.Series(y).loc[sample_rows_idx])
                 #print('mini_batch:  ', '\n',use_x)
-            #pred_y = x.dot(self.weights)
+            pred_y = use_x.dot(self.weights)
             lasso_mse = self.l1_coef * (sum(abs(self.weights)))  # L1 слагаемое к mse
             ridge_mse = self.l2_coef * (sum((self.weights) ** 2))  # L2 слагаемое к mse
 
@@ -115,7 +126,7 @@ class MyLineReg():
                 pass
                 #self.learning_rate = self.learning_rate
             #print(f'self.learning_rate: {use_learning_rate}, ####self.weights: {self.weights}  ')
-            self.weights = self.weights - use_learning_rate * gr  # шаг размером learning rate в противоположную от градиента сторону
+            self.weights -= use_learning_rate * gr  # шаг размером learning rate в противоположную от градиента сторону
 
             mae = sum(abs(use_y - pred_y)) / n  # метрика mae
             rmse = (sum((use_y - pred_y) ** 2) / n) ** 0.5  # метрика rmse
@@ -149,6 +160,8 @@ class MyLineReg():
 
     def get_best_score(self):
         return self.best_score
+
+
 X, y = make_regression(
 n_samples=1000,
 n_features=14,
@@ -159,14 +172,53 @@ X = pd.DataFrame(X)
 y = pd.Series(y)
 #X, _, y, _ = train_test_split(X, y, test_size=0.2, random_state=42)
 
-line = MyLineReg(n_iter=350, learning_rate=0.005,metric='mse', sgd_sample=0.01)
+line = MyLineReg(n_iter=350, learning_rate=0.005,metric='mse', sgd_sample=None)
 line.fit(X, y, verbose=50)
 #X, y = make_regression(n_samples=100, n_features=14, n_informative=10, noise=15, random_state=66)
 # X = pd.DataFrame(X)
 # y = pd.Series(y)
 X.columns = [f'col_{col}' for col in X.columns]
 
-print('SUM:--->  ',line.get_coef().sum())
+print('Mean:--->  ',line.get_coef().mean())
+
+# Failed test #1 of 3. Runtime error
+#
+# This is a sample test from the problem statement!
+#
+# Test input:
+# 0.1
+# Correct output:
+# 29.3543153818
+#
+# Your code output:
+#
+#
+# Error:
+# Traceback (most recent call last):
+#   File "jailed_code", line 175, in <module>
+#     line.fit(X, y, verbose=False)
+#   File "jailed_code", line 84, in fit
+#     sample_rows_idx = random.sample(list(use_x.shape[0]), use_sgd_sample)
+# TypeError: 'int' object is not iterable
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #------------------
 # Traceback (most recent call last):
 #   File "jailed_code", line 167, in <module>
