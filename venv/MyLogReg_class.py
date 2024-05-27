@@ -7,14 +7,32 @@ import warnings
 
 class MyLogReg:
 
-    def __init__(self, n_iter=100, learning_rate=0.1, weights=None):
+    def __init__(self, n_iter=100, learning_rate=0.1, weights=None, metric=None):
         self.n_iter = n_iter
         self.learning_rate = learning_rate
         self.weights = weights
+        valid_metrics = ['accuracy','precision','recall','f1','roc_auc']
+        if metric is not None and metric not in valid_metrics:
+            raise ValueError(f"Invalid metric. Expected one of {valid_metrics}")
+        self.metric = metric
+
+
 
     def __str__(self):
         params = ", ".join(f"{key}={value}" for key, value in self.__dict__.items())
         return f"{__class__.__name__} class: {params}"
+
+    def metrics(self, y, pred_y):
+        if self.metric == "accuracy":
+            pass
+        elif self.metric == "precision":
+            pass
+        elif self.metric == "recall":
+            pass
+        elif self.metric == "f1":
+            pass
+        elif self.metric == "roc_auc":
+            pass
 
     def fit(self, X: pd.DataFrame, y: pd.Series, verbose=False):
         X.insert(loc=0, column='col_0', value=1)
@@ -23,6 +41,7 @@ class MyLogReg:
         n = X.shape[0]
         for i in range(self.n_iter):
             y_pred = 1 / (1 + np.exp(-1 * (X.dot(self.weights))))
+            warnings.filterwarnings('ignore')
             LogLoss = (sum(y * np.log(y_pred + eps) + (1 - y) * np.log(1 - y_pred + eps))) * (-1 / n)
             grad = ((1 / n) * ((y_pred - y).dot(X)))
             self.weights -= self.learning_rate * grad
@@ -36,15 +55,17 @@ class MyLogReg:
     def get_coef(self):
         return np.array(self.weights[1:])
 
+    def get_best_score(self):
+        return self.best_score
+
     def predict(self, xx):
         xx.insert(loc=0, column='oness', value=1)
         pred_xx = 1 / (1 + np.exp(-1 * (xx.dot(self.weights.to_numpy()))))
-        pred_xx = pred_xx.round().astype(int)
-        return pred_xx
+        # pred_xx = pred_xx.round().astype(int)
+        return (pred_xx > 0.5).astype(int)
 
     def predict_proba(self, xy):
         pred_xy = 1 / (1 + np.exp(-1 * (xy.dot(self.weights.to_numpy()))))
-
         return pred_xy
 
 

@@ -43,6 +43,7 @@ class MyLineReg():
     def __repr__(self):
         return f'MyLineReg class: n_iter={self.n_iter}, learning_rate={self.learning_rate}'
 
+
     def fit(self, x, y, verbose=False):
         '''
         -:param x: — все фичи в виде датафрейма пандаса.
